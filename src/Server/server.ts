@@ -84,9 +84,9 @@ const decoder = new TextDecoder("utf-8");
 const app: Application = {
   verifyToken: (token: string, roomId: string): Promise<UserId | undefined> => {
     return new Promise((resolve, reject) => {
-      //console.log(dotenv.  .APP_SECRET);
-
       const result = verifyJwt(token, process.env.APP_SECRET as string);
+      console.log(result);
+
       if (result == undefined) {
         console.warn("Failed to Verify Token");
         reject();

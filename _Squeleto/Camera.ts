@@ -77,10 +77,10 @@ export class Camera {
 
   <view-port class="viewport">
         <viewport-inner>
-          < \${ vpSystem === } \${ vpSystem <=* vpSystems }>
           <camera-layer style=" width: \${size.x}px;height: \${size.y}px; transform: translate3d(\${position.x}px, \${position.y}px, 0px);">
               < \${ entity === } \${ entity <=* entities }>
           </camera-layer>
+          < \${ vpSystem === } \${ vpSystem <=* vpSystems }>
         </viewport-inner>
   </view-port>
   `;

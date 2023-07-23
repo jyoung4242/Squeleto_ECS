@@ -19,7 +19,7 @@ export class Lobby extends Scene {
       < \${ sceneSystem === } \${ sceneSystem <=* sceneSystems }
     </scene-layer>
   `;
-  //
+
   //runs on entry of scene
   public init(): void {
     console.log("creating camera");
