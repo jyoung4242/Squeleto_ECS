@@ -2,14 +2,12 @@
 import { Camera, ICameraConfig } from "../../_Squeleto/Camera";
 import { Scene } from "../../_Squeleto/Scene";
 import { Engine } from "@peasy-lib/peasy-engine";
+import { Vector } from "../../_Squeleto/ECS/Vector";
 
 //Scene Systems
-import { LobbySystem } from "../Systems/LobbyUI";
-import { Vector } from "../../_Squeleto/ECS/Vector";
 import { LobbyUI } from "../Systems/nonECSLobbyUI";
 
 //Entities
-import { LobbyHUDEntity } from "../Entities/HUDentity";
 
 export class Lobby extends Scene {
   name: string = "lobby";
