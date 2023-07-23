@@ -5,11 +5,12 @@ import { LoadComponents } from "./Components/_components";
 
 //Scenes
 import { Lobby } from "./Scenes/lobby";
+import { Game } from "./Scenes/game";
 
 //Components
 LoadComponents();
 
 //Load Scenes
 let sceneMgr = new SceneManager();
-sceneMgr.register(Lobby);
+sceneMgr.register(Lobby, Game);
 sceneMgr.set("lobby");

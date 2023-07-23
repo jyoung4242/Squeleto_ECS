@@ -1,7 +1,9 @@
-import { MultiPlayerInterface, AuthenticationType, User, Regions } from "../../_Squeleto/Multiplayer";
+import { MultiPlayerInterface, User, Regions } from "../../_Squeleto/Multiplayer";
 
 export interface ILobbyConfig {
   name: string;
+  interface: MultiPlayerInterface;
+  sceneSwitch: Function;
 }
 
 type GameType = "public" | "private";
@@ -26,16 +28,8 @@ export class LobbyUI {
   publicActiveCSS: string = "";
   isLobbiesEmpty: boolean = true;
   roomJoinInput: any;
-
-  HathoraClient: MultiPlayerInterface = new MultiPlayerInterface(
-    "app-fd2a351f-f6f4-4bae-ae58-70687bb2d9bb",
-    (msg: any) => {
-      console.log("login:", msg);
-    },
-    9000,
-    [AuthenticationType.anonymous],
-    true
-  );
+  start: Function;
+  HathoraClient: MultiPlayerInterface | undefined;
 
   public template = `
   <style>
@@ -269,7 +263,7 @@ export class LobbyUI {
   };
   login = async () => {
     if (this.loginStatus == "connected") return;
-    this.user = await this.HathoraClient.login();
+    this.user = await (this.HathoraClient as MultiPlayerInterface).login();
     this.refreshLobbies();
 
     if (this.user.token != "" && this.user.userdata?.id != "") {
@@ -279,7 +273,7 @@ export class LobbyUI {
   refreshLobbies = async () => {
     console.log("here");
 
-    const lobbies = await this.HathoraClient.getPublicLobbies();
+    const lobbies = await this.HathoraClient?.getPublicLobbies();
     this.openGames = [];
     if (lobbies?.length != 0) {
       this.isLobbiesEmpty = false;
@@ -305,16 +299,18 @@ export class LobbyUI {
       playerCapacity: cap,
       numPlayers: 0,
     };
-    await this.HathoraClient.createRoom(this.gameType, this.region, lobbyState);
+    await this.HathoraClient?.createRoom(this.gameType, this.region, lobbyState);
     this.refreshLobbies();
   };
 
-  private constructor(public name: string) {
+  private constructor(public name: string, HathoraClient: MultiPlayerInterface, switchScene: Function) {
     console.log("Lobby:", this);
+    this.HathoraClient = HathoraClient;
+    this.start = switchScene;
   }
 
   public static create(config: ILobbyConfig): LobbyUI {
-    return new LobbyUI(config.name);
+    return new LobbyUI(config.name, config.interface, config.sceneSwitch);
   }
 
   public update() {}
@@ -322,16 +318,13 @@ export class LobbyUI {
     console.log(model);
     console.log(model.opengame.roomId);
 
-    await this.HathoraClient.enterRoom(model.opengame.roomId);
+    await this.HathoraClient?.enterRoom(model.opengame.roomId);
   };
 
   joinRoom = async (e: any, model: any) => {
     if (this.roomJoinInput.value == "") return;
-    await this.HathoraClient.enterRoom(this.roomJoinInput.value);
-    console.log("ready to change scene");
-
-    //this.passedParams.push(this.HathoraClient);
-    //this.start();
+    await this.HathoraClient?.enterRoom(this.roomJoinInput.value);
+    this.start();
   };
 
   getNumPlayers = (state: LobbyState): number => {

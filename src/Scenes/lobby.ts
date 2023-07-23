@@ -4,16 +4,33 @@ import { Scene } from "../../_Squeleto/Scene";
 import { Engine } from "@peasy-lib/peasy-engine";
 import { Vector } from "../../_Squeleto/ECS/Vector";
 
+//import the Hathora Interface
+import { MultiPlayerInterface, AuthenticationType } from "../../_Squeleto/Multiplayer";
+
 //Scene Systems
 import { LobbyUI } from "../Systems/nonECSLobbyUI";
 
 //Entities
 
 export class Lobby extends Scene {
+  HathoraClient: MultiPlayerInterface = new MultiPlayerInterface(
+    "app-fd2a351f-f6f4-4bae-ae58-70687bb2d9bb",
+    (msg: any) => {
+      console.log("login:", msg);
+    },
+    9000,
+    [AuthenticationType.anonymous],
+    true
+  );
+  start = () => {
+    console.log("calling states.set()");
+    this.states?.set("game", performance.now(), this.HathoraClient);
+  };
   name: string = "lobby";
   entitySystems: any = [];
   sceneSystems: any = [];
   entities: any = [];
+
   public template = `
     <scene-layer>
       < \${ sceneSystem === } \${ sceneSystem <=* sceneSystems }
@@ -28,7 +45,7 @@ export class Lobby extends Scene {
       gameEntities: this.entities,
       position: new Vector(0, 0),
       size: new Vector(400, 266.67),
-      viewPortSystems: [LobbyUI.create({ name: "lobby" })],
+      viewPortSystems: [LobbyUI.create({ name: "lobby", interface: this.HathoraClient, sceneSwitch: this.start })],
     };
 
     let camera = Camera.create(cameraConfig);
