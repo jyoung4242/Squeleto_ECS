@@ -10,6 +10,9 @@ export class Component {
   }
 
   public static assignTo(entity: Entity, name: string, data: unknown): void {
+    console.log("name of component: ", name, ",   data: ", data);
+    console.log("group of components", Component.components);
+
     const component = name != null ? new (Component.components[name] as any)() : new (this as any)();
     component.entity = entity;
     component.define(data);

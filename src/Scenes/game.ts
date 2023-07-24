@@ -9,7 +9,18 @@ import { Camera, ICameraConfig } from "../../_Squeleto/Camera";
 
 //Entities
 
+//Server Messages
+import {
+  ServerMessageTypes,
+  ServerErrorMessage,
+  ServerStateUpdateMessage,
+  ServerJoinMessage,
+  ServerPlayerLeftMessage,
+} from "../Server/server";
+import { PlayerEntity } from "../Entities/playerEntity";
+
 export class Game extends Scene {
+  firstUpdate: Boolean = true;
   name: string = "game";
   entities: any = [];
   entitySystems: any = [];
@@ -48,7 +59,53 @@ export class Game extends Scene {
 
   public exit(): void {}
 
-  serverMessageHandler(msg: any) {
-    console.log("game:", msg);
+  serverMessageHandler = (msg: ServerMessageTypes) => {
+    switch (msg.type) {
+      case "stateupdate":
+        this.stateUpdate((msg as ServerStateUpdateMessage).state);
+        break;
+      case "newUser":
+        this.addEntity((msg as ServerJoinMessage).player);
+        break;
+      case "userLeftServer":
+        this.removeEntity((msg as ServerPlayerLeftMessage).playerID);
+        break;
+      case "serverError":
+        console.warn((msg as ServerErrorMessage).errormessage);
+        break;
+    }
+  };
+
+  update = (deltaTime: number) => {
+    this.sceneSystems.forEach((system: any) => {
+      system.update(deltaTime / 1000, 0, this.entities);
+    });
+  };
+
+  stateUpdate(state: any) {
+    if (this.firstUpdate) {
+      this.firstUpdate = false;
+      console.log(state);
+
+      state.players.forEach((player: any) => {
+        this.addEntity(player);
+      });
+    }
   }
+
+  addEntity = (newPlayer: any) => {
+    console.log("ADDING ENTITY: ", newPlayer);
+
+    this.entities.push(PlayerEntity.create(newPlayer.id, newPlayer.position));
+  };
+
+  removeEntity = (playerID: string) => {
+    //find Index of player
+    const playerIndex = this.entities.findIndex((plr: any) => {
+      plr.id == playerID;
+    });
+    if (playerIndex >= 0) {
+      this.entities.splice(playerIndex, 1);
+    }
+  };
 }

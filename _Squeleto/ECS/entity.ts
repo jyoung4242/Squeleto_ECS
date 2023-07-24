@@ -12,7 +12,7 @@ export class Entity {
       position: absolute;
     }
   </style>
-  <entity-layer class="entity" style="transform: translate3d(\${position.x}px,\${position.y}px, 0px); width: \${size.x}px; height: \${size.y}px;z-index:\${ysort}">
+  <entity-layer class="entity" style="transform: translate3d(\${position.x}px,\${position.y}px, 0px);">
     < \${ component === } \${ component <=* components } >
   </entity-layer>
   `;

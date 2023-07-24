@@ -1,5 +1,6 @@
 import { UserId, RoomId, Application, startServer, verifyJwt } from "@hathora/server-sdk";
 import { LobbyV2Api } from "@hathora/hathora-cloud-sdk";
+import { Vector } from "../../_Squeleto/ECS/Vector.ts";
 
 import * as dotenv from "dotenv";
 
@@ -28,9 +29,9 @@ type LobbyState = {
  *************************/
 type InternalPlayer = {
   id: UserId;
-  position: { x: number; y: number };
+  position: Vector;
   direction: direction;
-  color: Color;
+  velocity: Vector;
 };
 
 type InternalState = {
@@ -60,20 +61,31 @@ type ClientDirectionUpdateMessage = {
  * Server Messaging Types
  ***************************/
 
-type ServerMessageTypes = BaseServerType & ServerStateUpdateMessage;
+export type ServerMessageTypes = BaseServerType &
+  (ServerStateUpdateMessage | ServerStateUpdateMessage | ServerJoinMessage | ServerPlayerLeftMessage | ServerErrorMessage);
 
 type BaseServerType = {
   type: string;
 };
 
-type ServerStateUpdateMessage = {
+export type ServerStateUpdateMessage = {
   type: "stateupdate";
   state: InternalState;
 };
 
-type ServerErrorMessage = {
+export type ServerErrorMessage = {
   type: "serverError";
   errormessage: string;
+};
+
+export type ServerJoinMessage = {
+  type: "newUser";
+  player: InternalPlayer;
+};
+
+export type ServerPlayerLeftMessage = {
+  type: "userLeftServer";
+  playerID: string;
 };
 
 dotenv.config();
@@ -85,7 +97,6 @@ const app: Application = {
   verifyToken: (token: string, roomId: string): Promise<UserId | undefined> => {
     return new Promise((resolve, reject) => {
       const result = verifyJwt(token, process.env.APP_SECRET as string);
-      console.log(result);
 
       if (result == undefined) {
         console.warn("Failed to Verify Token");
@@ -101,14 +112,12 @@ const app: Application = {
         const lobbyInfo = await lobbyClient.getLobbyInfo(process.env.APP_ID as string, roomId);
         const lobbyState: LobbyState = lobbyInfo.state as LobbyState;
         const initialConfig: LobbyState = lobbyInfo.initialConfig as LobbyState;
-        console.log(lobbyInfo, lobbyState, initialConfig);
 
         /*************************************************
          * If room doesn't exist, create it and add to map
          ************************************************/
         if (!rooms.has(roomId)) {
           console.log("creating room");
-
           let newRoomState: InternalState = {
             players: [],
             capacity: lobbyState ? lobbyState.playerCapacity : initialConfig.playerCapacity,
@@ -120,7 +129,6 @@ const app: Application = {
          * get game state data
          ********************/
         const game = rooms.get(roomId);
-        console.log(game, roomId);
 
         /*****************************************
          * if player limit not exceeded, proceed
@@ -140,12 +148,20 @@ const app: Application = {
         const newPlayer: InternalPlayer = {
           id: userId,
           direction: "none",
-          position: { x: Math.random() * MAPWIDTH, y: Math.random() * MAPHEIGHT },
-          color: generateRandomColor(),
+          position: new Vector(Math.random() * MAPWIDTH, Math.random() * MAPHEIGHT),
+          velocity: new Vector(0, 0),
         };
         if (game) {
           game.players.push(newPlayer);
           updateLobbyData(game.capacity, game.players.length, roomId);
+          //broadcast new user to all players
+          const joinMessage: ServerJoinMessage = {
+            type: "newUser",
+            player: newPlayer,
+          };
+          console.log("join message");
+
+          server.broadcastMessage(roomId, encoder.encode(JSON.stringify(joinMessage)));
         }
       } catch (error) {
         /****************
@@ -178,6 +194,14 @@ const app: Application = {
        *******************************/
       const plrIndex = game?.players.findIndex(plr => plr.id == userId);
       if ((plrIndex as number) >= 0) {
+        //broadcast new user to all players
+        const leftMessage: ServerPlayerLeftMessage = {
+          type: "userLeftServer",
+          playerID: userId,
+        };
+        console.log("player leaving");
+
+        server.broadcastMessage(roomId, encoder.encode(JSON.stringify(leftMessage)));
         game?.players.splice(plrIndex as number, 1);
       }
       resolve();
@@ -203,6 +227,8 @@ const app: Application = {
        * Switch on message type
        **************************/
       const msg: ClientMessageTypes = JSON.parse(decoder.decode(data));
+      console.log("229", msg);
+
       switch (msg.type) {
         case "DirectionUpdate":
           const playerUpdated = userId;
@@ -215,6 +241,8 @@ const app: Application = {
             type: "serverError",
             errormessage: "invalid message type recevied from client",
           };
+          console.log("server error");
+
           server.sendMessage(roomId, userId, encoder.encode(JSON.stringify(errorMessage)));
           break;
       }
@@ -226,11 +254,6 @@ const app: Application = {
 const port = 9000;
 const server = await startServer(app, port);
 console.log(`Hathora Server listening on port ${port}`);
-
-const generateRandomColor = (): Color => {
-  const colorString = Math.floor(Math.random() * 16777215).toString(16);
-  return `#${colorString}`;
-};
 
 const updatePlayerDirection = (roomID: string, userId: string, direction: direction) => {
   //confirm room
@@ -245,35 +268,42 @@ setInterval(() => {
     //****************
     //update positions
     //****************
-    room.players.forEach(player => {
-      switch (player.direction) {
-        case "down":
-          player.position.y += 1;
-          break;
-        case "up":
-          player.position.y -= 1;
-          break;
-        case "left":
-          player.position.x -= 1;
-          break;
-        case "right":
-          player.position.x += 1;
-          break;
-        default:
-          //not moving
-          break;
-      }
-    });
-    //*****************************
-    //send state updates to all
-    //****************************
+    if (room.players.length >= 1) {
+      room.players.forEach(player => {
+        switch (player.direction) {
+          case "down":
+            player.velocity.y += 1;
+            player.velocity.x = 0;
+            break;
+          case "up":
+            player.velocity.y -= 1;
+            player.velocity.x = 0;
+            break;
+          case "left":
+            player.velocity.x -= 1;
+            player.velocity.y = 0;
+            break;
+          case "right":
+            player.velocity.x += 1;
+            player.velocity.y = 0;
+            break;
+          default:
+            //not moving
+            break;
+        }
+        player.position.add(player.velocity);
+      });
+      //*****************************
+      //send state updates to all
+      //****************************
 
-    const stateupdate: ServerStateUpdateMessage = {
-      type: "stateupdate",
-      state: room,
-    };
+      const stateupdate: ServerStateUpdateMessage = {
+        type: "stateupdate",
+        state: room,
+      };
 
-    server.broadcastMessage(key, encoder.encode(JSON.stringify(stateupdate)));
+      server.broadcastMessage(key, encoder.encode(JSON.stringify(stateupdate)));
+    }
   });
 }, 100);
 

@@ -30,6 +30,7 @@ export class Lobby extends Scene {
   entitySystems: any = [];
   sceneSystems: any = [];
   entities: any = [];
+  lobbyEngine: Engine | undefined;
 
   public template = `
     <scene-layer>
@@ -55,7 +56,7 @@ export class Lobby extends Scene {
     console.log("starting engine");
     this.sceneSystems.push(camera);
 
-    Engine.create({ fps: 60, started: true, callback: this.update });
+    this.lobbyEngine = Engine.create({ fps: 60, started: true, callback: this.update });
   }
 
   update = (deltaTime: number): void | Promise<void> => {
@@ -65,5 +66,7 @@ export class Lobby extends Scene {
   };
 
   //runs on exit of scene
-  public exit(): void {}
+  public exit(): void {
+    this.lobbyEngine?.destroy();
+  }
 }
