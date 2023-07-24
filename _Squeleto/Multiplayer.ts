@@ -7,10 +7,6 @@ export const LOCAL_CONNECTION_DETAILS: ConnectionDetails = {
   transportType: "tcp" as const,
 };
 
-export enum ClientMessageTypes {
-  CONNECTION,
-  UPDATE,
-}
 export type Regions = Region;
 export type GameScope = "public" | "private" | "local";
 
@@ -126,7 +122,7 @@ export class MultiPlayerInterface {
     return this.roomID;
   }
 
-  async sendMessage(type: ClientMessageTypes, data: string) {
+  async sendMessage(type: string, data: string) {
     this.connection?.writeJson({
       type: type,
       msg: data,

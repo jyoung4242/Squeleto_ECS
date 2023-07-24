@@ -107,7 +107,7 @@ export class Camera {
     return new Camera(config.name, config.gameEntities, config.viewPortSystems, config.position, config.size);
   }
 
-  public update(deltaTime: number) {
+  public update(deltaTime: number, now: number, entities: any) {
     this.vpSystems.forEach(vps => vps.update(deltaTime / 1000, 0, this.entities));
     //camera position update
 

@@ -6,8 +6,10 @@ import { MultiPlayerInterface } from "../../_Squeleto/Multiplayer";
 
 //Scene Systems
 import { Camera, ICameraConfig } from "../../_Squeleto/Camera";
+import { KeypressSystem } from "../Systems/keypress";
 
 //Entities
+import { PlayerEntity } from "../Entities/playerEntity";
 
 //Server Messages
 import {
@@ -17,7 +19,7 @@ import {
   ServerJoinMessage,
   ServerPlayerLeftMessage,
 } from "../Server/server";
-import { PlayerEntity } from "../Entities/playerEntity";
+import { Entity } from "../../_Squeleto/ECS/entity";
 
 export class Game extends Scene {
   firstUpdate: Boolean = true;
@@ -49,6 +51,9 @@ export class Game extends Scene {
     };
 
     let camera = Camera.create(cameraConfig);
+
+    camera.vpSystems.push(new KeypressSystem(this.HathoraClient as MultiPlayerInterface));
+    console.log(camera);
 
     //GameLoop
     console.log("starting engine");
@@ -91,12 +96,29 @@ export class Game extends Scene {
         this.addEntity(player);
       });
     }
+
+    this.entities.forEach((entity: any) => {
+      //find entity in state
+      if (entity.name) {
+        const entIndex = state.players.findIndex((player: any) => player.id == entity.name);
+        if (entIndex >= 0) {
+          entity.position = state.players[entIndex].position;
+        }
+      }
+    });
   }
 
   addEntity = (newPlayer: any) => {
-    console.log("ADDING ENTITY: ", newPlayer);
+    //look to ensure entity, doesn't already exist
 
-    this.entities.push(PlayerEntity.create(newPlayer.id, newPlayer.position));
+    const entIndex = this.entities.findIndex((ent: any) => {
+      return ent.name == newPlayer.id;
+    });
+    if (entIndex == -1) {
+      console.log("ADDING ENTITY: ", newPlayer);
+      this.entities.push(PlayerEntity.create(newPlayer.id, newPlayer.position));
+      console.log(this.entities);
+    }
   };
 
   removeEntity = (playerID: string) => {
@@ -105,6 +127,7 @@ export class Game extends Scene {
       plr.id == playerID;
     });
     if (playerIndex >= 0) {
+      console.log("REMOVING ENTITY: ", playerID);
       this.entities.splice(playerIndex, 1);
     }
   };

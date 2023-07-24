@@ -45,16 +45,15 @@ const rooms: Map<RoomId, InternalState> = new Map();
  * Client Messaging Types
  ***************************/
 
-type ClientMessageTypes = BaseClientType & ClientDirectionUpdateMessage;
+export type ClientMessageTypes = BaseClientType & ClientDirectionUpdateMessage;
 
 type BaseClientType = {
   type: string;
 };
 
-type ClientDirectionUpdateMessage = {
+export type ClientDirectionUpdateMessage = {
   type: "DirectionUpdate";
-  playerID: string;
-  direction: direction;
+  msg: direction;
 };
 
 /****************************
@@ -232,7 +231,8 @@ const app: Application = {
       switch (msg.type) {
         case "DirectionUpdate":
           const playerUpdated = userId;
-          const playerDirection = msg.direction;
+          const playerDirection = msg.msg;
+
           updatePlayerDirection(roomId, playerUpdated, playerDirection);
           break;
 
@@ -242,7 +242,6 @@ const app: Application = {
             errormessage: "invalid message type recevied from client",
           };
           console.log("server error");
-
           server.sendMessage(roomId, userId, encoder.encode(JSON.stringify(errorMessage)));
           break;
       }
@@ -272,26 +271,29 @@ setInterval(() => {
       room.players.forEach(player => {
         switch (player.direction) {
           case "down":
-            player.velocity.y += 1;
+            player.velocity.y = 5;
             player.velocity.x = 0;
             break;
           case "up":
-            player.velocity.y -= 1;
+            player.velocity.y = -5;
             player.velocity.x = 0;
             break;
           case "left":
-            player.velocity.x -= 1;
+            player.velocity.x = -5;
             player.velocity.y = 0;
             break;
           case "right":
-            player.velocity.x += 1;
+            player.velocity.x = 5;
             player.velocity.y = 0;
             break;
           default:
             //not moving
+            player.velocity.x = 0;
+            player.velocity.y = 0;
             break;
         }
-        player.position.add(player.velocity);
+
+        player.position = player.position.add(player.velocity);
       });
       //*****************************
       //send state updates to all
