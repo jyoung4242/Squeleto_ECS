@@ -45,7 +45,6 @@ export class Sprite extends Component {
     if (data == null) {
       return;
     }
-    console.log(data);
 
     this.imgElement = new Image();
     this.imgElement.onload = () => {
@@ -54,7 +53,6 @@ export class Sprite extends Component {
         position: new Vector(0, 0),
         size: new Vector(this.imgElement.width, this.imgElement.height),
       };
-      console.log(this.value);
     };
     this.imgElement.src = data as unknown as string;
   }

@@ -22,7 +22,7 @@ const keys: any = {
 export type KeypressEntity = Entity & NameComponent;
 
 export class KeypressSystem extends System {
-  lastkeypresssent: string = "none";
+  lastkeypressed: string = "none";
   template = ``;
   held_direction = <any>[];
   userId: string;
@@ -84,10 +84,17 @@ export class KeypressSystem extends System {
           break;
       } */
 
-      if (this.held_direction[0] != this.lastkeypresssent) {
-        if (this.held_direction[0] == undefined) this.serverConnection.sendMessage("DirectionUpdate", "none");
-        else this.serverConnection.sendMessage("DirectionUpdate", this.held_direction[0]);
-        this.lastkeypresssent = this.held_direction[0];
+      if (this.held_direction[0] != this.lastkeypressed) {
+        console.log(this.held_direction);
+
+        if (this.held_direction.length == 0 || this.held_direction[0] == undefined) {
+          console.log("sending none");
+          this.serverConnection.sendMessage("DirectionUpdate", "none");
+        } else {
+          console.log("sending: ", this.held_direction[0]);
+          this.serverConnection.sendMessage("DirectionUpdate", this.held_direction[0]);
+        }
+        this.lastkeypressed = this.held_direction[0];
       }
     });
   }

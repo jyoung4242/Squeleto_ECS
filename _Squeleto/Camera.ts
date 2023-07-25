@@ -71,7 +71,7 @@ export class Camera {
       position: absolute;
            top:0;
       left: 0;
-     
+     transition: transform .2s linear;
     }
   </style>
 

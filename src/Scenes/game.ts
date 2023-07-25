@@ -3,6 +3,7 @@ import { Scene } from "../../_Squeleto/Scene";
 import { Engine } from "@peasy-lib/peasy-engine";
 import { Vector } from "../../_Squeleto/ECS/Vector";
 import { MultiPlayerInterface } from "../../_Squeleto/Multiplayer";
+import { Entity } from "../../_Squeleto/ECS/entity";
 
 //Scene Systems
 import { Camera, ICameraConfig } from "../../_Squeleto/Camera";
@@ -10,6 +11,7 @@ import { KeypressSystem } from "../Systems/keypress";
 
 //Entities
 import { PlayerEntity } from "../Entities/playerEntity";
+import { MapEntity } from "../Entities/map";
 
 //Server Messages
 import {
@@ -19,9 +21,9 @@ import {
   ServerJoinMessage,
   ServerPlayerLeftMessage,
 } from "../Server/server";
-import { Entity } from "../../_Squeleto/ECS/entity";
 
 export class Game extends Scene {
+  camera: Camera | undefined;
   firstUpdate: Boolean = true;
   name: string = "game";
   entities: any = [];
@@ -52,9 +54,9 @@ export class Game extends Scene {
 
     let camera = Camera.create(cameraConfig);
 
+    this.entities.push(MapEntity.create());
     camera.vpSystems.push(new KeypressSystem(this.HathoraClient as MultiPlayerInterface));
-    console.log(camera);
-
+    this.camera = camera;
     //GameLoop
     console.log("starting engine");
     this.sceneSystems.push(camera);
@@ -91,10 +93,10 @@ export class Game extends Scene {
     if (this.firstUpdate) {
       this.firstUpdate = false;
       console.log(state);
-
       state.players.forEach((player: any) => {
         this.addEntity(player);
       });
+      if (this.getClientEntity()) this.camera?.follow(this.getClientEntity() as Entity);
     }
 
     this.entities.forEach((entity: any) => {
@@ -103,6 +105,12 @@ export class Game extends Scene {
         const entIndex = state.players.findIndex((player: any) => player.id == entity.name);
         if (entIndex >= 0) {
           entity.position = state.players[entIndex].position;
+          const status = state.players[entIndex].status;
+          const direction = state.players[entIndex].direction;
+          console.log();
+
+          if (status != entity.barbarian.status || direction != entity.barbarian.direction)
+            entity.barbarian.changeSequence(status, direction);
         }
       }
     });
@@ -118,6 +126,7 @@ export class Game extends Scene {
       console.log("ADDING ENTITY: ", newPlayer);
       this.entities.push(PlayerEntity.create(newPlayer.id, newPlayer.position));
       console.log(this.entities);
+      if (this.getClientEntity()) this.camera?.follow(this.getClientEntity() as Entity);
     }
   };
 
@@ -130,5 +139,13 @@ export class Game extends Scene {
       console.log("REMOVING ENTITY: ", playerID);
       this.entities.splice(playerIndex, 1);
     }
+  };
+
+  getClientEntity = (): Entity | undefined => {
+    const entIndex = this.entities.findIndex((ent: any) => ent.name == this.HathoraClient?.userdata.id);
+    if (entIndex >= 0) {
+      return this.entities[entIndex];
+    }
+    return undefined;
   };
 }

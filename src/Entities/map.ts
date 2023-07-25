@@ -7,9 +7,9 @@ export class MapEntity {
     return Entity.create({
       id: uuidv4(),
       components: {
-        size: [640, 640],
         position: [0, 0],
         sprite: map,
+        zindex: 0,
       },
     });
   }

@@ -15,11 +15,12 @@ export class Name extends Component {
     <style>
       .name-component {
         position: absolute;
-        font-size: 4px;
-        width: 100px;
+        font-size: 5px;
+        font-weight: bold;
+        width: 50px;
         height: 16px;
-        top: -10px;
-        left: -50px;
+        top: -8px;
+        left: -16px;
         text-align: center;
       }
     </style>

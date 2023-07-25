@@ -31,6 +31,7 @@ type InternalPlayer = {
   id: UserId;
   position: Vector;
   direction: direction;
+  status: "idle" | "walk";
   velocity: Vector;
 };
 
@@ -146,9 +147,10 @@ const app: Application = {
          ***********************************************/
         const newPlayer: InternalPlayer = {
           id: userId,
-          direction: "none",
+          direction: "down",
           position: new Vector(Math.random() * MAPWIDTH, Math.random() * MAPHEIGHT),
           velocity: new Vector(0, 0),
+          status: "idle",
         };
         if (game) {
           game.players.push(newPlayer);
@@ -226,7 +228,6 @@ const app: Application = {
        * Switch on message type
        **************************/
       const msg: ClientMessageTypes = JSON.parse(decoder.decode(data));
-      console.log("229", msg);
 
       switch (msg.type) {
         case "DirectionUpdate":
@@ -259,7 +260,16 @@ const updatePlayerDirection = (roomID: string, userId: string, direction: direct
   if (!rooms.has(roomID)) return;
   const room = rooms.get(roomID);
   const playerIndex = room?.players.findIndex((player: any) => player.id == userId);
-  if ((playerIndex as number) >= 0 && room) room.players[playerIndex as number].direction = direction;
+  if ((playerIndex as number) >= 0 && room) {
+    console.log("direction change: ", direction);
+
+    if (direction != "none") {
+      room.players[playerIndex as number].direction = direction;
+      room.players[playerIndex as number].status = "walk";
+    } else {
+      room.players[playerIndex as number].status = "idle";
+    }
+  }
 };
 
 setInterval(() => {
@@ -269,28 +279,28 @@ setInterval(() => {
     //****************
     if (room.players.length >= 1) {
       room.players.forEach(player => {
-        switch (player.direction) {
-          case "down":
-            player.velocity.y = 5;
-            player.velocity.x = 0;
-            break;
-          case "up":
-            player.velocity.y = -5;
-            player.velocity.x = 0;
-            break;
-          case "left":
-            player.velocity.x = -5;
-            player.velocity.y = 0;
-            break;
-          case "right":
-            player.velocity.x = 5;
-            player.velocity.y = 0;
-            break;
-          default:
-            //not moving
-            player.velocity.x = 0;
-            player.velocity.y = 0;
-            break;
+        if (player.status == "walk") {
+          switch (player.direction) {
+            case "down":
+              player.velocity.y = 5;
+              player.velocity.x = 0;
+              break;
+            case "up":
+              player.velocity.y = -5;
+              player.velocity.x = 0;
+              break;
+            case "left":
+              player.velocity.x = -5;
+              player.velocity.y = 0;
+              break;
+            case "right":
+              player.velocity.x = 5;
+              player.velocity.y = 0;
+              break;
+          }
+        } else {
+          player.velocity.x = 0;
+          player.velocity.y = 0;
         }
 
         player.position = player.position.add(player.velocity);

@@ -9,9 +9,11 @@ export class PlayerEntity {
       id: uuidv4(),
       components: {
         name: name,
-        color: randomColor(),
+        //color: randomColor(),
         position: position,
         keyboard: "",
+        zindex: 1,
+        barbarian: null,
       },
     });
   }

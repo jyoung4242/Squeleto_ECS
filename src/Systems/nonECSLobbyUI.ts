@@ -271,8 +271,6 @@ export class LobbyUI {
     }
   };
   refreshLobbies = async () => {
-    console.log("here");
-
     const lobbies = await this.HathoraClient?.getPublicLobbies();
     this.openGames = [];
     if (lobbies?.length != 0) {
@@ -289,7 +287,6 @@ export class LobbyUI {
         });
       });
     } else this.isLobbiesEmpty = true;
-    console.log(this.openGames);
   };
 
   createGame = async () => {
